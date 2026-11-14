@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "Billing Service — Oficina Mecânica",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Coleção completa do Billing Service — Fase 4 FIAP"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8082"},
+    {"key": "token", "value": ""},
+    {"key": "osId", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login Admin",
+          "event": [{"listen": "test", "script": {"exec": ["var r = pm.response.json();", "pm.collectionVariables.set('token', r.token);"]}}],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {"mode": "raw", "raw": "{\n  \"login\": \"admin\",\n  \"senha\": \"admin123\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orçamentos",
+      "item": [
+        {
+          "name": "Criar Orçamento",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/billing/orcamentos",
+            "body": {"mode": "raw", "raw": "{\n  \"osId\": \"{{osId}}\",\n  \"itensServico\": [\n    {\"servicoId\": \"uuid-do-servico\", \"nomeServico\": \"Troca de óleo\", \"quantidade\": 1, \"precoUnitario\": 150.00}\n  ],\n  \"itensPeca\": [\n    {\"pecaId\": \"uuid-da-peca\", \"nomePeca\": \"Filtro de óleo\", \"quantidade\": 1, \"precoUnitario\": 50.00}\n  ]\n}"}
+          }
+        },
+        {
+          "name": "Consultar Orçamento por OS",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/billing/orcamentos/{{osId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pagamentos",
+      "item": [
+        {
+          "name": "Iniciar Pagamento (Mercado Pago)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/billing/pagamentos",
+            "body": {"mode": "raw", "raw": "{\n  \"osId\": \"{{osId}}\"\n}"}
+          }
+        },
+        {
+          "name": "Consultar Status do Pagamento",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/billing/pagamentos/{{osId}}"
+          }
+        },
+        {
+          "name": "Webhook Mercado Pago (público)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": "{{baseUrl}}/api/billing/pagamentos/webhook",
+            "body": {"mode": "raw", "raw": "{\n  \"type\": \"payment\",\n  \"data\": {\n    \"id\": \"123456789\"\n  }\n}"}
+          }
+        }
+      ]
+    }
+  ]
+}

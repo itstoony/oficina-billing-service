@@ -44,6 +44,13 @@ spec:
                 secretKeyRef:
                   name: billing-secrets
                   key: mercadopago-access-token
+            - name: NEW_RELIC_LICENSE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: billing-secrets
+                  key: newrelic-license-key
+            - name: NEW_RELIC_APP_NAME
+              value: oficina-billing-service-prod
           resources:
             requests:
               cpu: "250m"
