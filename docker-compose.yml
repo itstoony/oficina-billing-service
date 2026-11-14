@@ -1,0 +1,49 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://billing:billing@mongo:27017/billing
+      RABBITMQ_HOST: rabbitmq
+      OFICINA_JWT_SECRET: ${OFICINA_JWT_SECRET:-minha-chave-secreta-super-segura-para-jwt-hs256}
+      MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-TEST-token}
+      SPRING_PROFILES_ACTIVE: prod
+    depends_on:
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_DATABASE: billing
+      MONGO_INITDB_ROOT_USERNAME: billing
+      MONGO_INITDB_ROOT_PASSWORD: billing
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_billing:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo_billing:
