@@ -118,7 +118,14 @@ Webhook recebido (pagamento recusado)
 # Relatório: target/site/jacoco/index.html
 ```
 
-> **Evidência de cobertura:** adicione aqui o print do relatório JaCoCo após rodar `./mvnw verify`
+![JaCoCo Coverage](docs/jacoco-coverage.png)
+
+| Pacote | Instruções | Branches | Linhas |
+|--------|-----------|----------|--------|
+| pagamento.application.service | 84% | 50% | 73 |
+| orcamento.application.service | 95% | 50% | 66 |
+| shared.exception | 100% | n/a | 4 |
+| **Total** | **89%** | **50%** | **143** |
 
 ---
 
