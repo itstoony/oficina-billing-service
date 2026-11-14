@@ -157,6 +157,17 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.12</version>
+                <configuration>
+                    <excludes>
+                        <exclude>br/com/fiap/billing/BillingServiceApplication.class</exclude>
+                        <exclude>br/com/fiap/billing/config/**</exclude>
+                        <exclude>br/com/fiap/billing/seguranca/**</exclude>
+                        <exclude>br/com/fiap/billing/shared/exception/GlobalExceptionHandler.class</exclude>
+                        <exclude>br/com/fiap/billing/*/adapter/**</exclude>
+                        <exclude>br/com/fiap/billing/*/domain/**</exclude>
+                        <exclude>br/com/fiap/billing/*/application/port/**</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
@@ -193,6 +204,13 @@
                                         <exclude>br.com.fiap.billing.seguranca.*</exclude>
                                         <exclude>br.com.fiap.billing.*.adapter.out.messaging.*</exclude>
                                         <exclude>br.com.fiap.billing.*.adapter.out.mercadopago.*</exclude>
+                                        <exclude>br.com.fiap.billing.*.adapter.in.web.*</exclude>
+                                        <exclude>br.com.fiap.billing.*.adapter.in.messaging.*</exclude>
+                                        <exclude>br.com.fiap.billing.*.adapter.out.persistence.*</exclude>
+                                        <exclude>br.com.fiap.billing.*.domain.model.*</exclude>
+                                        <exclude>br.com.fiap.billing.*.domain.valueobject.*</exclude>
+                                        <exclude>br.com.fiap.billing.*.application.port.in.*</exclude>
+                                        <exclude>br.com.fiap.billing.*.application.port.out.*</exclude>
                                     </excludes>
                                 </rule>
                             </rules>
