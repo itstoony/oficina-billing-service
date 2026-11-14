@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: billing-config
+  namespace: oficina
+data:
+  SPRING_DATA_MONGODB_HOST: "billing-db"
+  SPRING_DATA_MONGODB_PORT: "27017"
+  SPRING_DATA_MONGODB_DATABASE: "billing"
+  SPRING_DATA_MONGODB_USERNAME: "billing_service"
+  SPRING_PROFILES_ACTIVE: "prod"
+  RABBITMQ_HOST: "rabbitmq"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USERNAME: "guest"
+  MERCADOPAGO_WEBHOOK_URL: "https://seu-dominio.com/api/billing/pagamentos/webhook"

@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-app
+  namespace: oficina
+spec:
+  replicas: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: billing-app
+  template:
+    metadata:
+      labels:
+        app: billing-app
+    spec:
+      containers:
+        - name: billing-service
+          image: itstoony/billing-service:latest
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: billing-config
+          env:
+            - name: SPRING_DATA_MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: billing-secrets
+                  key: mongodb-password
+            - name: OFICINA_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: billing-secrets
+                  key: jwt-secret
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: billing-secrets
+                  key: rabbitmq-password
+            - name: MERCADOPAGO_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: billing-secrets
+                  key: mercadopago-access-token
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            failureThreshold: 20
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-app
+  namespace: oficina
+spec:
+  selector:
+    app: billing-app
+  ports:
+    - port: 8082
+      targetPort: 8082
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-db
+  namespace: oficina
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: billing-db
+  template:
+    metadata:
+      labels:
+        app: billing-db
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:7-jammy
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: billing_service
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: billing-secrets
+                  key: mongodb-password
+            - name: MONGO_INITDB_DATABASE
+              value: billing
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - mountPath: /data/db
+              name: db-data
+      volumes:
+        - name: db-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-db
+  namespace: oficina
+spec:
+  selector:
+    app: billing-db
+  ports:
+    - port: 27017
+      targetPort: 27017
