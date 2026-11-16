@@ -87,7 +87,7 @@ spec:
     app: billing-app
   ports:
     - port: 8082
-      targetPort: 8082
+      targetPort: 8080
   type: LoadBalancer
 ---
 apiVersion: apps/v1
