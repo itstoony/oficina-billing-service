@@ -58,7 +58,8 @@ jobs:
             -Dsonar.projectKey=itstoony_oficina-billing-service \
             -Dsonar.organization=itstoony \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=$SONAR_TOKEN
+            -Dsonar.token=$SONAR_TOKEN \
+            -Dsonar.coverage.exclusions="**/adapter/**,**/config/**,**/seguranca/**,**/shared/exception/GlobalExceptionHandler.java,**/*Application.java,**/domain/**,**/application/port/**"
 
   docker:
     name: Build e Push Docker
@@ -109,7 +110,14 @@ jobs:
         run: aws eks update-kubeconfig --region sa-east-1 --name oficina-cluster
 
       - name: Deploy
+        env:
+          MERCADOPAGO_ACCESS_TOKEN: ${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}
+          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
         run: |
+          sed -i \
+            -e "s|PLACEHOLDER_MERCADOPAGO_TOKEN|${MERCADOPAGO_ACCESS_TOKEN}|g" \
+            -e "s|PLACEHOLDER_NEWRELIC_KEY|${NEW_RELIC_LICENSE_KEY}|g" \
+            k8s/secret.yaml
           kubectl apply -f k8s/namespace.yaml
           kubectl apply -f k8s/secret.yaml
           kubectl apply -f k8s/configmap.yaml
