@@ -6,6 +6,14 @@ Microsserviço responsável pela **geração de orçamentos**, **integração co
 
 ---
 
+## Documentação de Arquitetura
+
+Para diagramas detalhados (componentes, sequência, MongoDB schema, Hexagonal, Mercado Pago integration, Saga flows) consulte:
+
+**[docs/ARQUITETURA.md](docs/ARQUITETURA.md)**
+
+---
+
 ## Arquitetura
 
 ```
