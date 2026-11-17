@@ -75,13 +75,17 @@ class OrcamentoServiceTest {
     }
 
     @Test
-    @DisplayName("Deve lançar exceção se orçamento já existe para a OS")
-    void deveLancarExcecaoOrcamentoDuplicado() {
+    @DisplayName("Deve atualizar orçamento existente ao chamar gerar novamente para a mesma OS")
+    void deveAtualizarOrcamentoExistente() {
         when(repositorio.buscarPorOsId("os-uuid-123")).thenReturn(Optional.of(orcamentoSalvo));
+        when(repositorio.salvar(any())).thenReturn(orcamentoSalvo);
+        doNothing().when(eventPublisher).publicarOrcamentoGerado(any());
 
-        assertThatThrownBy(() -> service.gerar(requestValido))
-                .isInstanceOf(RegraDeNegocioException.class)
-                .hasMessageContaining("os-uuid-123");
+        OrcamentoDTO.Response response = service.gerar(requestValido);
+
+        assertThat(response.osId()).isEqualTo("os-uuid-123");
+        verify(repositorio).salvar(any());
+        verify(eventPublisher).publicarOrcamentoGerado(any());
     }
 
     @Test
@@ -102,6 +106,100 @@ class OrcamentoServiceTest {
 
         assertThatThrownBy(() -> service.buscarPorOsId("inexistente"))
                 .isInstanceOf(RecursoNaoEncontradoException.class);
+    }
+
+    @Test
+    @DisplayName("Deve atualizar email quando o email existente contém espaço (vindo de os.aberta)")
+    void deveAtualizarEmailInvalidoComEmailCorreto() {
+        Orcamento orcamentoComEmailInvalido = Orcamento.builder()
+                .id("mongo-id-001")
+                .osId("os-uuid-123")
+                .numeroOs("OS-2026-00001")
+                .clienteId("cliente-uuid-456")
+                .clienteEmail("João Silva@pendente.com")
+                .valorTotal(BigDecimal.ZERO)
+                .status(StatusOrcamento.ENVIADO)
+                .build();
+
+        when(repositorio.buscarPorOsId("os-uuid-123")).thenReturn(Optional.of(orcamentoComEmailInvalido));
+        when(repositorio.salvar(any())).thenAnswer(inv -> inv.getArgument(0));
+        doNothing().when(eventPublisher).publicarOrcamentoGerado(any());
+
+        OrcamentoDTO.Response response = service.gerar(requestValido);
+
+        assertThat(response.clienteEmail()).isEqualTo("joao@email.com");
+    }
+
+    @Test
+    @DisplayName("Não deve substituir email válido por email com espaço")
+    void naoDeveSubstituirEmailValidoPorEmailComEspaco() {
+        OrcamentoDTO.GerarRequest requestComEmailInvalido = new OrcamentoDTO.GerarRequest(
+                "os-uuid-123", "OS-2026-00001", "cliente-uuid-456",
+                "Nome Com Espaco@pendente.com",
+                BigDecimal.ZERO, List.of(), List.of()
+        );
+
+        when(repositorio.buscarPorOsId("os-uuid-123")).thenReturn(Optional.of(orcamentoSalvo));
+        when(repositorio.salvar(any())).thenAnswer(inv -> inv.getArgument(0));
+        doNothing().when(eventPublisher).publicarOrcamentoGerado(any());
+
+        OrcamentoDTO.Response response = service.gerar(requestComEmailInvalido);
+
+        assertThat(response.clienteEmail()).isEqualTo("joao@email.com");
+    }
+
+    @Test
+    @DisplayName("Não deve atualizar itens quando a lista de itens estiver vazia")
+    void naoDeveAtualizarItensQuandoListaVazia() {
+        OrcamentoDTO.GerarRequest requestSemItens = new OrcamentoDTO.GerarRequest(
+                "os-uuid-123", "OS-2026-00001", "cliente-uuid-456",
+                "joao@email.com", BigDecimal.ZERO, List.of(), List.of()
+        );
+
+        when(repositorio.buscarPorOsId("os-uuid-123")).thenReturn(Optional.of(orcamentoSalvo));
+        when(repositorio.salvar(any())).thenReturn(orcamentoSalvo);
+        doNothing().when(eventPublisher).publicarOrcamentoGerado(any());
+
+        OrcamentoDTO.Response response = service.gerar(requestSemItens);
+
+        assertThat(response.osId()).isEqualTo("os-uuid-123");
+        verify(repositorio).salvar(any());
+    }
+
+    @Test
+    @DisplayName("Deve tolerar falha ao publicar evento sem lançar exceção")
+    void deveTolerarFalhaAoPublicarEvento() {
+        when(repositorio.buscarPorOsId("os-uuid-123")).thenReturn(Optional.empty());
+        when(repositorio.salvar(any())).thenReturn(orcamentoSalvo);
+        doThrow(new RuntimeException("RabbitMQ indisponível"))
+                .when(eventPublisher).publicarOrcamentoGerado(any());
+
+        OrcamentoDTO.Response response = service.gerar(requestValido);
+
+        assertThat(response.osId()).isEqualTo("os-uuid-123");
+    }
+
+    @Test
+    @DisplayName("Deve tolerar itens null tratando como lista vazia")
+    void deveGerarOrcamentoComItensNulos() {
+        OrcamentoDTO.GerarRequest requestComNulos = new OrcamentoDTO.GerarRequest(
+                "os-uuid-777", "OS-2026-00007", "cliente-uuid-456",
+                "joao@email.com", BigDecimal.ZERO, null, null
+        );
+
+        Orcamento orcamentoVazio = Orcamento.builder()
+                .id("mongo-id-777").osId("os-uuid-777").numeroOs("OS-2026-00007")
+                .clienteEmail("joao@email.com").valorTotal(BigDecimal.ZERO)
+                .status(StatusOrcamento.ENVIADO).build();
+
+        when(repositorio.buscarPorOsId("os-uuid-777")).thenReturn(Optional.empty());
+        when(repositorio.salvar(any())).thenReturn(orcamentoVazio);
+        doNothing().when(eventPublisher).publicarOrcamentoGerado(any());
+
+        OrcamentoDTO.Response response = service.gerar(requestComNulos);
+
+        assertThat(response.osId()).isEqualTo("os-uuid-777");
+        assertThat(response.valorTotal()).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test

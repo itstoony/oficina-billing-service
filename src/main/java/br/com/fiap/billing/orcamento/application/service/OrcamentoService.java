@@ -27,9 +27,10 @@ public class OrcamentoService implements OrcamentoUseCase {
 
     @Override
     public OrcamentoDTO.Response gerar(OrcamentoDTO.GerarRequest request) {
-        repositorio.buscarPorOsId(request.osId()).ifPresent(existente -> {
-            throw new RegraDeNegocioException("Orçamento já existe para a OS: " + request.osId());
-        });
+        var existente = repositorio.buscarPorOsId(request.osId());
+        if (existente.isPresent()) {
+            return atualizar(existente.get(), request);
+        }
 
         List<ItemOrcamento> itensServico = toItens(request.itensServico());
         List<ItemOrcamento> itensPeca = toItens(request.itensPeca());
@@ -57,6 +58,27 @@ public class OrcamentoService implements OrcamentoUseCase {
         Orcamento orcamento = repositorio.buscarPorOsId(osId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Orçamento não encontrado para OS: " + osId));
         return toResponse(orcamento);
+    }
+
+    private OrcamentoDTO.Response atualizar(Orcamento orcamento, OrcamentoDTO.GerarRequest request) {
+        List<ItemOrcamento> itensServico = toItens(request.itensServico());
+        List<ItemOrcamento> itensPeca = toItens(request.itensPeca());
+        BigDecimal valorTotal = calcularTotal(itensServico, itensPeca);
+
+        if (!request.itensServico().isEmpty() || !request.itensPeca().isEmpty()) {
+            orcamento.setItensServico(itensServico);
+            orcamento.setItensPeca(itensPeca);
+            orcamento.setValorTotal(valorTotal);
+        }
+        if (request.clienteEmail() != null && !request.clienteEmail().contains(" ")) {
+            orcamento.setClienteEmail(request.clienteEmail());
+        }
+        orcamento.setDataAtualizacao(LocalDateTime.now());
+
+        Orcamento salvo = repositorio.salvar(orcamento);
+        publicarEventoSeguro(() -> eventPublisher.publicarOrcamentoGerado(salvo), salvo.getOsId());
+        log.info("Orçamento atualizado para OS {}", salvo.getNumeroOs());
+        return toResponse(salvo);
     }
 
     private List<ItemOrcamento> toItens(List<OrcamentoDTO.ItemRequest> itensRequest) {

@@ -60,7 +60,11 @@ public class MercadoPagoAdapter implements MercadoPagoPort {
             Preference preference = client.create(request);
 
             return new CriarPreferenciaResult(preference.getId(), preference.getInitPoint());
-        } catch (MPException | MPApiException e) {
+        } catch (MPApiException e) {
+            log.error("Erro ao criar preferência no Mercado Pago para OS {} — status: {}, body: {}",
+                    osId, e.getStatusCode(), e.getApiResponse() != null ? e.getApiResponse().getContent() : "null");
+            throw new RegraDeNegocioException("Erro ao criar pagamento: " + e.getMessage());
+        } catch (MPException e) {
             log.error("Erro ao criar preferência no Mercado Pago para OS {}: {}", osId, e.getMessage());
             throw new RegraDeNegocioException("Erro ao criar pagamento: " + e.getMessage());
         }

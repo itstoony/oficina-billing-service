@@ -9,5 +9,5 @@ data:
   RABBITMQ_HOST: "rabbitmq"
   RABBITMQ_PORT: "5672"
   RABBITMQ_USERNAME: "guest"
-  MERCADOPAGO_WEBHOOK_URL: "https://seu-dominio.com/api/billing/pagamentos/webhook"
+  MERCADOPAGO_NOTIFICATION_URL: "http://a82929faea1704bcbbaf6980e5daedca-980942039.sa-east-1.elb.amazonaws.com:8082/api/billing/pagamentos/webhook"
   NEW_RELIC_AGENT_ENABLED: "false"
