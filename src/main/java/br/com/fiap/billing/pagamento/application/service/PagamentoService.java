@@ -68,6 +68,23 @@ public class PagamentoService implements PagamentoUseCase {
     }
 
     @Override
+    public PagamentoDTO.Response confirmarPagamentoTeste(String osId) {
+        Pagamento pagamento = pagamentoRepositorio.buscarPorOsId(osId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Pagamento não encontrado para OS: " + osId));
+
+        pagamento.setStatus(StatusPagamento.APROVADO);
+        pagamento.setExternalId("TESTE-" + osId.substring(0, 8));
+        pagamento.setDataPagamento(LocalDateTime.now());
+
+        pagamentoRepositorio.salvar(pagamento);
+        atualizarOrcamento(osId, StatusOrcamento.APROVADO);
+        publicarEventoSeguro(() -> eventPublisher.publicarPagamentoConfirmado(pagamento), osId);
+
+        log.info("Pagamento de teste confirmado para OS {}", osId);
+        return toResponse(pagamento);
+    }
+
+    @Override
     public void processarWebhook(PagamentoDTO.WebhookRequest webhook) {
         if (webhook.data() == null || webhook.data().id() == null) return;
 

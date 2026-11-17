@@ -40,4 +40,11 @@ public class PagamentoController {
         useCase.processarWebhook(request);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/{osId}/confirmar-teste")
+    @Operation(summary = "Confirma pagamento para fins de demonstração (sem Mercado Pago)")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<PagamentoDTO.Response> confirmarTeste(@PathVariable String osId) {
+        return ResponseEntity.ok(useCase.confirmarPagamentoTeste(osId));
+    }
 }
